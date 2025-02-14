@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Planets, People, Favorites
 #from models import Person
 
 app = Flask(__name__)
@@ -45,8 +45,51 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
+@app.route('/people', methods=['GET'])
+def get_all_people():
+    data = db.session.scalars(db.select(People)).all()
+    result = list(map(lambda item: item.serialize(),data))
 
+    if result == []:
+        return jsonify({"msg":"there are no humanoid records"}), 404
 
+    response_body = {
+        "msg": "Hello, this is your GET /user response ",
+        "results": result
+    }
+
+    return jsonify(response_body), 200
+
+@app.route('/people/<int:people_id>', methods=['GET'])
+def get_people(people_id):
+    try:
+        people = db.session.execute(db.select(People).filter_by(id=people_id)).scalar_one()
+        return jsonify({"result":people.serialize()}), 200
+    except:
+        return jsonify({"msg":"people do not exist"}), 404
+
+@app.route('/planets', methods=['GET'])
+def get_all_planets():
+    data = db.session.scalars(db.select(Planets)).all()
+    result = list(map(lambda item: item.serialize(),data))
+
+    if result == []:
+        return jsonify({"msg":"there are no existing planetary records"}), 404
+
+    response_body = {
+        "msg": "Hello, this is your GET /user response ",
+        "results": result
+    }
+
+    return jsonify(response_body), 200
+
+@app.route('/planets/<int:planets_id>', methods=['GET'])
+def get_planet(planets_id):
+    try:
+        planets = db.session.execute(db.select(Planets).filter_by(id=planets_id)).scalar_one()
+        return jsonify({"result":planets.serialize()}), 200
+    except:
+        return jsonify({"msg":"planet do not exist"}), 404
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
