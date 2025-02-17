@@ -63,9 +63,10 @@ class People(db.Model):
 class Favorites(db.Model):
     __tablename__ = 'favorites'
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    people_id: Mapped[int] = mapped_column(ForeignKey("people.id"))
-    planet_id: Mapped[int] = mapped_column(ForeignKey("planets.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    people_id: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=True)
+    planet_id: Mapped[int] = mapped_column(ForeignKey("planets.id"), nullable=True)
+
     def serialize(self):
         return {
             "id": self.id,

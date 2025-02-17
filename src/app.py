@@ -37,10 +37,15 @@ def sitemap():
     return generate_sitemap(app)
 
 @app.route('/user', methods=['GET'])
-def handle_hello():
+def get_user():
+    data = db.session.scalars(db.select(User)).all()
+    result = list(map(lambda item: item.serialize(),data))
+
+    if result == []:
+        return jsonify({"msg":"there are no users"}), 404
 
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "results": result
     }
 
     return jsonify(response_body), 200
@@ -54,7 +59,6 @@ def get_all_people():
         return jsonify({"msg":"there are no humanoid records"}), 404
 
     response_body = {
-        "msg": "Hello, this is your GET /user response ",
         "results": result
     }
 
@@ -90,6 +94,15 @@ def get_planet(planets_id):
         return jsonify({"result":planets.serialize()}), 200
     except:
         return jsonify({"msg":"planet do not exist"}), 404
+    
+@app.route('/user/<int:user_id>/favorites', methods=['GET'])
+def get_favorites(user_id):
+    try:
+        favorites = db.session.execute(db.select(Favorites).filter_by(user_id=user_id)).scalars().all()
+        return jsonify({"result": [fav.serialize() for fav in favorites]}), 200
+
+    except Exception as e:
+        return jsonify({"msg":"Error", "error": str(e)}), 500
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
