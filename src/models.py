@@ -15,7 +15,8 @@ class User(db.Model):
     name: Mapped[str] = mapped_column(String(80),nullable=False)
     last_name: Mapped[str] = mapped_column(String(80), nullable=False)
     is_active: Mapped[bool]
-    favorites: Mapped[List["Favorites"]] = relationship()
+    favorites_people: Mapped[List["Favorites_people"]] = relationship()
+    favorites_planets: Mapped[List["Favorites_planets"]] = relationship()
 
     def serialize(self):
         return {
@@ -33,7 +34,7 @@ class Planets(db.Model):
     climate: Mapped[str] = mapped_column(nullable=False)
     diameter: Mapped[str] = mapped_column(nullable=False)
     gravity: Mapped[str] = mapped_column(nullable=False)
-    favorites: Mapped[List["Favorites"]] = relationship()
+    favorites: Mapped[List["Favorites_planets"]] = relationship()
 
     def serialize(self):
         return {
@@ -50,7 +51,7 @@ class People(db.Model):
     eyes_color: Mapped[str] = mapped_column(nullable=False)
     hair_color: Mapped[str] = mapped_column(nullable=False)
     heigth: Mapped[str] = mapped_column(nullable=False)
-    favorites: Mapped[List["Favorites"]] = relationship()
+    favorites: Mapped[List["Favorites_people"]] = relationship()
     def serialize(self):
         return {
             "id": self.id,
@@ -60,17 +61,30 @@ class People(db.Model):
             "heigth": self.heigth
         }
 
-class Favorites(db.Model):
-    __tablename__ = 'favorites'
+class Favorites_people(db.Model):
+    __tablename__ = 'favorites_people'
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    people_id: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=True)
-    planet_id: Mapped[int] = mapped_column(ForeignKey("planets.id"), nullable=True)
+    name: Mapped[int] = mapped_column(ForeignKey("people.id"), nullable=True)
 
     def serialize(self):
+        people = db.session.execute(db.select(People).filter_by(id=self.name)).scalar_one()
         return {
             "id": self.id,
             "user_id": self.user_id,
-            "people_id": self.people_id,
-            "planet_id": self.planet_id,
+            "name": people.serialize(),
+        }
+    
+class Favorites_planets(db.Model):
+    __tablename__ = 'favorites_planets'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    name: Mapped[int] = mapped_column(ForeignKey("planets.id"), nullable=True)
+
+    def serialize(self):
+        planet = db.session.execute(db.select(Planets).filter_by(id=self.name)).scalar_one()
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "name": planet.serialize(),
         }
