@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Planets, People, Favorites_planets,Favorites_people
+from models import db, User, Planets, People, Favorites
 #from models import Person
 
 app = Flask(__name__)
@@ -95,40 +95,28 @@ def get_planet(planets_id):
     except:
         return jsonify({"msg":"planet do not exist"}), 404
     
-@app.route('/user/<int:user_id>/favorites-people', methods=['GET'])
+@app.route('/user/<int:user_id>/favorites', methods=['GET'])
 def get_favorites_people(user_id):
     try:
-        favorites = db.session.execute(db.select(Favorites_people).filter_by(user_id=user_id)).scalars().all()
-
+        favorites = db.session.execute(db.select(Favorites).filter_by(user_id=user_id)).scalars().all()
         if favorites != []:
             return jsonify({"result": [fav.serialize() for fav in favorites]}), 200
         return jsonify({"msg": "dont have favorites"})
     except Exception as e:
         return jsonify({"msg":"Error", "error": str(e)}), 500
     
-@app.route('/user/<int:user_id>/favorites-planets', methods=['GET'])
-def get_favorites_planets(user_id):
-    try:
-        favorites = db.session.execute(db.select(Favorites_planets).filter_by(user_id=user_id)).scalars().all()
-        if favorites != []:
-            return jsonify({"result": [fav.serialize() for fav in favorites]}), 200
-        return jsonify({"msg": "dont have favorites"})
-    except Exception as e:
-        return jsonify({"msg":"Error", "error": str(e)}), 500
-    
-@app.route('/favorites-planets/planets/<int:user_id>', methods=['POST'])
+@app.route('/favorites/planets/<int:user_id>', methods=['POST'])
 def post_favorite_planets(user_id):
     try:
         request_body=request.json
-        # user = db.session.execute(db.select(Favorites_planets).filter_by(user_id=user_id)).scalar_one()
-        # planet = db.session.execute(db.select(Favorites_planets).filter_by(name=request_body["name"])).scalar_one()
-        return jsonify({"msg":"this user already has this favorite or dont exist"}), 401
+        user = db.session.execute(db.select(Favorites).filter_by(user_id=user_id)).scalar()
+        favorite = db.session.execute(db.select(Favorites).filter_by(planet_id=request_body["planet_id"])).scalar_one()
+        return jsonify({"msg":"this user already has this favorite or dont exist"}), 401    
     except:
-        favorite = Favorites_planets(user_id=request_body["user_id"], name=request_body["name"])
+        favorite = Favorites(user_id=user_id, people_id=None, planet_id=request_body["planet_id"])
         db.session.add(favorite)
         db.session.commit()
         return jsonify({"msg":"added favorite"}), 201
-
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
