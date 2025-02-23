@@ -105,18 +105,69 @@ def get_favorites_people(user_id):
     except Exception as e:
         return jsonify({"msg":"Error", "error": str(e)}), 500
     
-@app.route('/favorites/planets/<int:user_id>', methods=['POST'])
-def post_favorite_planets(user_id):
+@app.route('/user/<int:user_id>/favorites/planets/<int:planet_id>', methods=['POST'])
+def post_favorite_planets(user_id,planet_id):
     try:
-        request_body=request.json
-        user = db.session.execute(db.select(Favorites).filter_by(user_id=user_id)).scalar()
-        favorite = db.session.execute(db.select(Favorites).filter_by(planet_id=request_body["planet_id"])).scalar_one()
-        return jsonify({"msg":"this user already has this favorite or dont exist"}), 401    
-    except:
-        favorite = Favorites(user_id=user_id, people_id=None, planet_id=request_body["planet_id"])
-        db.session.add(favorite)
-        db.session.commit()
-        return jsonify({"msg":"added favorite"}), 201
+        user = db.session.query(db.select(User).filter_by(id=user_id).exists()).scalar()
+        planet = db.session.query(db.select(Planets).filter_by(id=planet_id).exists()).scalar()
+        favorite = db.session.query(db.select(Favorites).filter_by(user_id=user_id, planet_id=planet_id).exists()).scalar()
+        if not favorite:
+            if planet and user:
+                new_favorite = Favorites(user_id=user_id, people_id=None, planet_id=planet_id)
+                db.session.add(new_favorite)
+                db.session.commit()
+                return jsonify({"msg":"added favorite"}), 201
+            else:
+                return jsonify({"msg": "User or Planet not found"}), 404
+        else:
+            return jsonify({"msg": "Favorite already exists"}), 404
+    except Exception as e:
+        return jsonify({"msg":"Error", "error": str(e)}), 500
+
+@app.route('/user/<int:user_id>/favorites/people/<int:people_id>', methods=['POST'])
+def post_favorite_people(user_id,people_id):
+    try:
+        user = db.session.query(db.select(User).filter_by(id=user_id).exists()).scalar()
+        planet = db.session.query(db.select(People).filter_by(id=people_id).exists()).scalar()
+        favorite = db.session.query(db.select(Favorites).filter_by(user_id=user_id, people_id=people_id).exists()).scalar()
+        if not favorite:
+            if planet and user:
+                new_favorite = Favorites(user_id=user_id, people_id=people_id, planet_id=None)
+                db.session.add(new_favorite)
+                db.session.commit()
+                return jsonify({"msg":"added favorite"}), 201
+            else:
+                return jsonify({"msg": "User or People not found"}), 404
+        else:
+            return jsonify({"msg": "Favorite already exists"}), 404
+    except Exception as e:
+        return jsonify({"msg":"Error", "error": str(e)}), 500
+
+@app.route('/user/<int:user_id>/favorites/planet/<int:planet_id>', methods=['DELETE'])
+def delete_favorite_planet(user_id,planet_id):
+    try:
+        favorite = db.session.execute(db.select(Favorites).filter_by(user_id=user_id, planet_id=planet_id)).scalar_one_or_none()
+        if favorite:
+            db.session.delete(favorite)
+            db.session.commit()
+            return jsonify({"msg":"deleted favorite"}), 201
+        else:
+            return jsonify({"msg": "Favorite or user not found"}), 404
+    except Exception as e:
+        return jsonify({"msg":"Error", "error": str(e)}), 500
+    
+@app.route('/user/<int:user_id>/favorites/people/<int:people_id>', methods=['DELETE'])
+def delete_favorite_people(user_id,people_id):
+    try:
+        favorite = db.session.execute(db.select(Favorites).filter_by(user_id=user_id, people_id=people_id)).scalar_one_or_none()
+        if favorite:
+            db.session.delete(favorite)
+            db.session.commit()
+            return jsonify({"msg":"deleted favorite"}), 201
+        else:
+            return jsonify({"msg": "Favorite or user not found"}), 404
+    except Exception as e:
+        return jsonify({"msg":"Error", "error": str(e)}), 500
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
